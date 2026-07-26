@@ -10,9 +10,11 @@ import orderRoutes from './routes/orderRoutes.js';
 const app = express();
 
 app.use(cors({
-  origin:'*',
-  credentials: true
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
 }));
+
 app.use(express.json());
 
 // Routes
