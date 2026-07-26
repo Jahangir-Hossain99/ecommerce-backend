@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:root@postgres:5432/ecommerce_db?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=catchy_secret
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - BKASH_APP_KEY=${BKASH_APP_KEY}
+      - BKASH_APP_SECRET=${BKASH_APP_SECRET}
+      - BKASH_USERNAME=${BKASH_USERNAME}
+      - BKASH_PASSWORD=${BKASH_PASSWORD}
+      - BKASH_URL=${BKASH_URL}
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+
+volumes:
+  pgdata:
