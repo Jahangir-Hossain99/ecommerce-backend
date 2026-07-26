@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://b087-203-188-250-146.ngrok-free.app',
+  baseURL: 'https://f952-203-188-250-146.ngrok-free.app ',
 });
 
 // Request Interceptor token to be sent with every request to the backend
