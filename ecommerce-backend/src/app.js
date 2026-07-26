@@ -9,7 +9,10 @@ import orderRoutes from './routes/orderRoutes.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin:'*',
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
