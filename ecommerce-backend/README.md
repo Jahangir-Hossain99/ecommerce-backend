@@ -209,26 +209,27 @@ Docker Desktop
 ### 2. Environment Variables Setup
 Create a .env file in the root folder and add the following config:
 
-Code snippet
+```text
 PORT=5000
 DATABASE_URL="postgresql://postgres:root@localhost:5432/ecommerce_db?schema=public"
 REDIS_URL="redis://localhost:6379"
 JWT_SECRET="your_super_secret_jwt_key"
 BACKEND_URL="http://localhost:5000"
-
+```
 # Stripe Credentials
 STRIPE_SECRET_KEY="sk_test_..."
 
 # bKash Sandbox Credentials
+```text
 BKASH_APP_KEY="your_app_key"
 BKASH_APP_SECRET="your_app_secret"
 BKASH_USERNAME="your_username"
 BKASH_PASSWORD="your_password"
 BKASH_BASE_URL="[https://tokenized.sandbox.bKash.com/v1.2.0-beta](https://tokenized.sandbox.bKash.com/v1.2.0-beta)"
-
+```
 
 ### 3. Local Installation & Database Setup
-Bash
+
 # Clone project
 git clone <repository-url>
 cd ecommerce-backend
@@ -263,6 +264,7 @@ npm test
 ---
 
 ## 📌 API Endpoints Summary
+```text
 
 Method  	Endpoint	                                Description	                                Access
 POST	    /api/auth/register	                        Register a new user	                        Public
@@ -275,4 +277,4 @@ POST	    /api/orders/stripe-webhook	                Stripe payment completion li
 GET	        /api/orders/bkash-callback	                bKash payment verification callback	        Public
 
 **API Testing From POSTMAN is in /docs/Ecommerce Backend API.postman_collection.json
-
+```
