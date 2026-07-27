@@ -150,8 +150,7 @@ erDiagram
     Server->>DB: Safely Reduce Product Stock
     Server-->>Client: Redirect to Success Page
 ```
----
-
+</details>
 
 ## 📁 Folder Structure
 
