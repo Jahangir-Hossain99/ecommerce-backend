@@ -149,8 +149,11 @@ erDiagram
     Server->>DB: Update Payment & Order Status to PAID
     Server->>DB: Safely Reduce Product Stock
     Server-->>Client: Redirect to Success Page
+```
+---
 
-    📁 Folder Structure
+
+## 📁 Folder Structure
 
     src/
 ├── config/             # DB (Prisma) and Redis Client configurations
@@ -174,9 +177,9 @@ erDiagram
     │   └── PaymentContext.js
     └── recommendation/ # DFS Tree Traversal & Caching logic
         └── categoryDFS.js
+---
 
-
-🛠️ Tech Stack & Dependencies
+## 🛠️ Tech Stack & Dependencies
 Runtime: Node.js (v20+)
 
 Framework: Express.js
@@ -192,16 +195,17 @@ Payments: Stripe SDK & Axios (for bKash Checkout API)
 Testing: Jest & Supertest
 
 Containerization: Docker & Docker Compose
+---
 
-🚀 Getting Started
-1. Prerequisites
+## 🚀 Getting Started
+### 1. Prerequisites
 Make sure you have installed:
 
 Node.js (v20)
 
 Docker Desktop
 
-2. Environment Variables Setup
+### 2. Environment Variables Setup
 Create a .env file in the root folder and add the following config:
 
 Code snippet
@@ -222,7 +226,7 @@ BKASH_PASSWORD="your_password"
 BKASH_BASE_URL="[https://tokenized.sandbox.bKash.com/v1.2.0-beta](https://tokenized.sandbox.bKash.com/v1.2.0-beta)"
 
 
-3. Local Installation & Database Setup
+### 3. Local Installation & Database Setup
 Bash
 # Clone project
 git clone <repository-url>
@@ -251,12 +255,13 @@ To run the entire app stack (Backend App + PostgreSQL + Redis) seamlessly:
 
 # Build and start all services
 docker-compose up --build
-🧪 Testing
+# 🧪 Testing
 Execute unit and integration tests using Jest:
 
 npm test
+---
 
-📌 API Endpoints Summary
+## 📌 API Endpoints Summary
 
 Method  	Endpoint	                                Description	                                Access
 POST	    /api/auth/register	                        Register a new user	                        Public
