@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import API from './api';
-import { ShoppingCart, CreditCard, Trash2, UserCheck, LogIn, X } from 'lucide-react';
+import { ShoppingCart, CreditCard, Trash2, LogIn, X } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import StripeCheckoutForm from './modal/StripeCheckoutForm';
+import { loadStripe } from '@stripe/stripe-js';
+// Stripe Promise Initialization and Publishable Key
+const stripePromise = loadStripe('pk_test_51TwOv95VYSflUbG2HgsZpXDeym6v66K9fm70kxQt7ReBd819rvHhe2GsBe6P1lEUDirYgR6v1XqFrLn3ZPb4DPId00w1MsH3Ud');
+
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -9,6 +15,7 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState(1);
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [clientSecret, setClientSecret] = useState(''); // For Stripe Payment
 
   // Auth State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -117,19 +124,34 @@ function App() {
         items: orderItems,
       });
 
+
       if (selectedProvider === 'bkash') {
-        window.location.href = data.data.paymentResult.bkashURL;
-      } else {
-        alert(`Stripe Payment Intent Created!\nTransaction ID: ${data.data.paymentResult.transactionId}`);
-        setCart([]);
-        setIsPaymentModalOpen(false);
-        fetchProducts(); // Refresh dynamic backend stock
+        const bkashURL = data?.data?.payment?.bkashURL;
+        if (bkashURL) {
+          window.location.href = bkashURL.startsWith('http') ? bkashURL : `https://${bkashURL}`;
+        }else {
+          console.error('bKash URL missing in response:', data);
+          alert('Failed to initiate bKash payment. (bKash URL missing in response)');
+        }
+      } else if (selectedProvider === 'stripe') {
+        const secret = data?.data?.paymentResult?.clientSecret;
+        if (secret) {
+          setClientSecret(secret);
+          setIsPaymentModalOpen(false);
+
+        } else {
+              console.error('Client secret missing in response:', data);
+             alert('Failed to initiate Stripe payment. (Client secret missing in response)');
+  
+        }
       }
     } catch (err) {
+      console.error("Backend Error Object:", err.response?.data);
       alert('Checkout Failed: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
+
   };
 
   return (
@@ -410,6 +432,22 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Stripe Card Input Modal Popup */}
+                {clientSecret && (
+                  <Elements stripe={stripePromise}>
+                    <StripeCheckoutForm
+                      clientSecret={clientSecret}
+                      onClose={() => setClientSecret('')}
+                      onPaymentSuccess={() => {
+                        setCart([]);
+                        setClientSecret('');
+                        fetchProducts(); // Refresh backend stock
+                      }}
+                    />
+                  </Elements>
+                )}
+
     </div>
   );
 }
