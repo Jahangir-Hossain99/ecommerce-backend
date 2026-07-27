@@ -4,11 +4,12 @@ import axios from 'axios';
 class BKashStrategy extends PaymentStrategy {
   constructor() {
     super();
-    this.baseURL = process.env.BKASH_BASE_URL; 
+    this.baseURL = (process.env.BKASH_URL || 'https://tokenized.sandbox.bKash.com/v1.2.0-beta').replace(/\/+$/, '');
   }
 
 
   async getGrantToken() {
+  try {
     const response = await axios.post(
       `${this.baseURL}/tokenized/checkout/token/grant`,
       {
@@ -17,13 +18,23 @@ class BKashStrategy extends PaymentStrategy {
       },
       {
         headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
           username: process.env.BKASH_USERNAME,
           password: process.env.BKASH_PASSWORD,
         },
+        family: 4,
       }
     );
+
     return response.data.id_token;
+  } catch (error) {
+    console.error('bKash Grant Token Error:', error.response?.data || error.message);
+    
+    const detailedMessage = error.response?.data?.statusMessage || error.message;
+    throw new Error(`bKash Grant Token Failed: ${detailedMessage}`);
   }
+}
 
   async processPayment(orderDetails) {
     const { amount, orderId } = orderDetails;
@@ -47,6 +58,10 @@ class BKashStrategy extends PaymentStrategy {
         },
       }
     );
+
+    if (!response.data || !response.data.paymentID || !response.data.bkashURL) {
+      throw new Error('Failed to create BKash payment');
+    }
 
     return {
       provider: 'bkash',

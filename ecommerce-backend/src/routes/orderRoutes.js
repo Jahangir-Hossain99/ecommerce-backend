@@ -7,5 +7,6 @@ import { authenticateToken } from '../middlewares/authMiddleware.js';
 router.post('/', authenticateToken, orderController.createOrder);
 router.post('/stripe-webhook', express.raw({ type: 'application/json' }), orderController.stripeWebhook);
 router.get('/bkash-callback', orderController.bkashCallback);
+router.post('/manual-verify', orderController.manualVerifyPayment);
 
 export default  router;

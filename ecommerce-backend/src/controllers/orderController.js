@@ -15,7 +15,10 @@ const createOrder = async (req, res) => {
     for (const item of items) {
       const product = await prisma.product.findUnique({ where: { id: item.productId } });
       if (!product || product.stock < item.quantity) {
-        return res.status(400).json({ success: false, message: `Insufficient stock for product ID: ${item.productId}` });
+        return res.status(400).json({ 
+          success: false, 
+          message: `Insufficient stock for product: ${product ? product.name : item.productId}` 
+        });
       }
 
       const subtotal = product.price * item.quantity;
@@ -30,7 +33,7 @@ const createOrder = async (req, res) => {
     }
 
     // Database Transaction for Atomic Creation
-    const order = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
           userId,
@@ -61,19 +64,35 @@ const createOrder = async (req, res) => {
       return { newOrder, paymentResult };
     });
 
-    res.status(201).json({ success: true, data: order });
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
+    console.error('Create Order Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 2. Payment Success Helper (Safe Stock Reduction Algorithm)
+//  Safe & Atomic Stock Reduction Helper Function
 const handleSuccessfulPayment = async (transactionId, rawData) => {
-  return await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUnique({ where: { transactionId } });
-    if (!payment || payment.status === 'SUCCESS') return;
+  console.log(`🔄 Processing stock reduction for Transaction: ${transactionId}`);
 
-    // Update Payment & Order
+  return await prisma.$transaction(async (tx) => {
+    // Transactional Fetch of Payment Record
+    const payment = await tx.payment.findUnique({ 
+      where: { transactionId: String(transactionId) } 
+    });
+
+    if (!payment) {
+      console.error(`❌ Payment record not found for Transaction ID: ${transactionId}`);
+      return;
+    }
+
+    // If payment is already marked as SUCCESS, skip further processing
+    if (payment.status === 'SUCCESS') {
+      console.log(`⚠️ Payment ${transactionId} is already processed.`);
+      return;
+    }
+
+    // Payment & Order Status Update
     await tx.payment.update({
       where: { id: payment.id },
       data: { status: 'SUCCESS', rawResponse: rawData }
@@ -85,48 +104,74 @@ const handleSuccessfulPayment = async (transactionId, rawData) => {
       include: { orderItems: true }
     });
 
-    // Safely reduce stock for each product
+    // Stock Reduction for Each Product in the Order
     for (const item of order.orderItems) {
-      await tx.product.update({
+      const updatedProduct = await tx.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: item.quantity } }
       });
+      console.log(`✅ Stock updated for Product ID ${item.productId}: New Stock = ${updatedProduct.stock}`);
     }
   });
 };
 
-// 3. Stripe Webhook Handler
+// Stripe Webhook Handler (Fixed Event Parsing)
 const stripeWebhook = async (req, res) => {
   try {
-    const paymentContext = new PaymentContext('stripe');
-    const verification = await paymentContext.executeVerification(req.body);
+    const event = req.body; // Express.json() middleware used
 
-    if (verification.status === 'SUCCESS') {
-      await handleSuccessfulPayment(verification.transactionId, verification.rawResponse);
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      console.log('💳 Stripe Payment Intent Succeeded:', paymentIntent.id);
+
+      await handleSuccessfulPayment(paymentIntent.id, paymentIntent);
     }
+
     res.status(200).json({ received: true });
   } catch (error) {
+    console.error('Stripe Webhook Error:', error.message);
     res.status(400).send(`Webhook Error: ${error.message}`);
   }
 };
 
-// 4. bKash Callback Handler
+// ৪. bKash Callback Handler (Fixed Callback Handling)
 const bkashCallback = async (req, res) => {
   try {
     const { paymentID, status } = req.query;
-    if (status === 'success') {
+
+    if (status === 'success' || status === 'Completed') {
+      const PaymentContext = require('../services/payment/PaymentContext');
       const paymentContext = new PaymentContext('bkash');
+      
       const verification = await paymentContext.executeVerification({ paymentID });
 
       if (verification.status === 'SUCCESS') {
         await handleSuccessfulPayment(verification.transactionId, verification.rawResponse);
-        return res.status(200).json({ success: true, message: 'bKash payment successful' });
+        return res.status(200).json({ success: true, message: 'bKash payment successful and stock updated!' });
       }
     }
-    res.status(400).json({ success: false, message: 'bKash payment failed' });
+
+    res.status(400).json({ success: false, message: 'bKash payment verification failed' });
+  } catch (error) {
+    console.error('bKash Callback Error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Manual Payment Verification Endpoint for Testing
+const manualVerifyPayment = async (req, res) => {
+  try {
+    const { transactionId } = req.body;
+    await handleSuccessfulPayment(transactionId, { manualTest: true });
+    res.status(200).json({ success: true, message: 'Payment verified and stock reduced successfully!' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-export default { createOrder, stripeWebhook, bkashCallback };
+export default {
+  createOrder,
+  stripeWebhook,
+  bkashCallback,
+  manualVerifyPayment
+};
