@@ -154,7 +154,8 @@ erDiagram
 
 ## 📁 Folder Structure
 
-    src/
+```text
+src/
 ├── config/             # DB (Prisma) and Redis Client configurations
 │   ├── prisma.js
 │   └── redis.js
@@ -176,6 +177,7 @@ erDiagram
     │   └── PaymentContext.js
     └── recommendation/ # DFS Tree Traversal & Caching logic
         └── categoryDFS.js
+```
 ---
 
 ## 🛠️ Tech Stack & Dependencies
